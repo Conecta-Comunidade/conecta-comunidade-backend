@@ -29,4 +29,14 @@ public class UserService {
         );
     }
 
+    public UserResponseDTO findByEmail(String email) {
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow( ()-> new RuntimeException("Email não encontrado"));
+        return new UserResponseDTO(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole());
+    };
 }

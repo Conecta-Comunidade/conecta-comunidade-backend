@@ -5,6 +5,7 @@ import com.api.conectaComunidade.user.dto.UserResponseDTO;
 import com.api.conectaComunidade.user.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,5 +27,17 @@ public class UserController {
         UserResponseDTO user = userService.findById(id);
 
         return  ResponseEntity.status(HttpStatus.OK).body(user);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> findMe(Authentication authentication) {
+
+        UserResponseDTO response = userService.findByEmail(
+                authentication.getName()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
     }
 }

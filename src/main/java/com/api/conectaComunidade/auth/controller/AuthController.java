@@ -1,6 +1,8 @@
 package com.api.conectaComunidade.auth.controller;
 
 
+import com.api.conectaComunidade.auth.dto.LoginRequestDTO;
+import com.api.conectaComunidade.auth.dto.LoginResponseDTO;
 import com.api.conectaComunidade.auth.dto.RegisterRequestDTO;
 import com.api.conectaComunidade.auth.dto.RegisterResponseDTO;
 import com.api.conectaComunidade.auth.service.AuthService;
@@ -31,6 +33,15 @@ public class AuthController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    @PostMapping("/login")
+    private ResponseEntity<LoginResponseDTO> login (@Valid @RequestBody LoginRequestDTO login){
+        LoginResponseDTO response = authService.login(login);
+
+        return  ResponseEntity
+                .status(HttpStatus.OK)
                 .body(response);
     }
 }
