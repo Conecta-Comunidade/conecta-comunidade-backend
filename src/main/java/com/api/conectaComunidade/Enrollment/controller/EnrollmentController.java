@@ -1,6 +1,7 @@
 package com.api.conectaComunidade.Enrollment.controller;
 
 import com.api.conectaComunidade.Enrollment.dto.EnrollmentCancelResponseDTO;
+import com.api.conectaComunidade.Enrollment.dto.EnrollmentCompleteResponseDTO;
 import com.api.conectaComunidade.Enrollment.dto.EnrollmentRequestDTO;
 import com.api.conectaComunidade.Enrollment.dto.EnrollmentResponseDTO;
 import com.api.conectaComunidade.Enrollment.service.EnrollmentService;
@@ -63,6 +64,36 @@ public class EnrollmentController {
     ) {
         List<EnrollmentResponseDTO> response =
                 enrollmentService.findMyEnrollments(
+                        authentication.getName()
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/services/{serviceId}")
+    @PreAuthorize("hasRole('CONTRIBUTOR')")
+    public ResponseEntity<List<EnrollmentResponseDTO>> findByService(
+            @PathVariable Long serviceId,
+            Authentication authentication
+    ) {
+        List<EnrollmentResponseDTO> response =
+                enrollmentService.findByService(
+                        serviceId,
+                        authentication.getName()
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasRole('CONTRIBUTOR')")
+    public ResponseEntity<EnrollmentCompleteResponseDTO> complete(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        EnrollmentCompleteResponseDTO response =
+                enrollmentService.complete(
+                        id,
                         authentication.getName()
                 );
 

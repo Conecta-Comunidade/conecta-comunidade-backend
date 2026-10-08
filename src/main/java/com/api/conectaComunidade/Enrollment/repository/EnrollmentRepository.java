@@ -18,4 +18,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment,Long> {
     );
 
     List<Enrollment> findByBeneficiaryId(Long beneficiaryId);
+
+    List<Enrollment> findByServiceId(Long serviceId);
 }

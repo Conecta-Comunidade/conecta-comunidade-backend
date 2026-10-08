@@ -1,6 +1,7 @@
 package com.api.conectaComunidade.Enrollment.service;
 
 import com.api.conectaComunidade.Enrollment.dto.EnrollmentCancelResponseDTO;
+import com.api.conectaComunidade.Enrollment.dto.EnrollmentCompleteResponseDTO;
 import com.api.conectaComunidade.Enrollment.dto.EnrollmentRequestDTO;
 import com.api.conectaComunidade.Enrollment.dto.EnrollmentResponseDTO;
 import com.api.conectaComunidade.Enrollment.entity.Enrollment;
@@ -13,6 +14,7 @@ import com.api.conectaComunidade.user.entity.User;
 import com.api.conectaComunidade.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -52,6 +54,8 @@ public class EnrollmentService {
                     "Apenas beneficiários podem se inscrever em serviços."
             );
         }
+
+        validateServiceDateTime(service, request.horario());
 
         validateHorario(service, request.horario());
 
@@ -132,6 +136,94 @@ public class EnrollmentService {
                 .toList();
     }
 
+    public List<EnrollmentResponseDTO> findByService(
+            Long serviceId,
+            String email
+    ) {
+        User contributor = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Usuário não encontrado.")
+                );
+
+        CommunityService service = communityServiceRepository
+                .findById(serviceId)
+                .orElseThrow(() ->
+                        new RuntimeException("Serviço não encontrado.")
+                );
+
+        if (!service.getContributor().getId().equals(contributor.getId())) {
+            throw new IllegalArgumentException(
+                    "Você não pode consultar as inscrições deste serviço."
+            );
+        }
+
+        return enrollmentRepository
+                .findByServiceId(serviceId)
+                .stream()
+                .map(this::toResponseDTO)
+                .toList();
+    }
+
+    public EnrollmentCompleteResponseDTO complete(
+            Long enrollmentId,
+            String email
+    ) {
+        User contributor = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Usuário não encontrado.")
+                );
+
+        Enrollment enrollment = enrollmentRepository
+                .findById(enrollmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Inscrição não encontrada.")
+                );
+
+        if (!enrollment.getService().getContributor().getId()
+                .equals(contributor.getId())) {
+
+            throw new IllegalArgumentException(
+                    "Você não pode concluir esta inscrição."
+            );
+        }
+
+        if (enrollment.getStatus() != EnrollmentStatus.ACTIVE) {
+            throw new IllegalArgumentException(
+                    "A inscrição não está ativa."
+            );
+        }
+
+        enrollment.setStatus(EnrollmentStatus.COMPLETED);
+
+        enrollmentRepository.save(enrollment);
+
+        return new EnrollmentCompleteResponseDTO(
+                "Inscrição concluída com sucesso."
+        );
+    }
+
+    private void validateServiceDateTime(
+            CommunityService service,
+            LocalTime horario
+    ) {
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+
+        if (service.getDate().isBefore(today)) {
+            throw new IllegalArgumentException(
+                    "Não é possível se inscrever em um serviço que já aconteceu."
+            );
+        }
+
+        if (service.getDate().isEqual(today) && !horario.isAfter(now)) {
+            throw new IllegalArgumentException(
+                    "Não é possível se inscrever em um horário que já passou."
+            );
+        }
+    }
+
     private void validateHorario(
             CommunityService service,
             LocalTime horario
@@ -163,6 +255,7 @@ public class EnrollmentService {
                 enrollment.getService().getName(),
                 enrollment.getService().getDate(),
                 enrollment.getHorario(),
+                enrollment.getStatus(),
                 enrollment.getBeneficiary().getId(),
                 enrollment.getBeneficiary().getName()
         );
