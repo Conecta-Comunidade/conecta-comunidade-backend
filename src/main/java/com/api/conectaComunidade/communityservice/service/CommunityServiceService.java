@@ -1,5 +1,7 @@
 package com.api.conectaComunidade.communityservice.service;
 
+import com.api.conectaComunidade.Enrollment.entity.EnrollmentStatus;
+import com.api.conectaComunidade.Enrollment.repository.EnrollmentRepository;
 import com.api.conectaComunidade.communityservice.dto.CommunityServiceRequestDTO;
 import com.api.conectaComunidade.communityservice.dto.CommunityServiceResponseDTO;
 import com.api.conectaComunidade.communityservice.entity.CommunityService;
@@ -9,6 +11,8 @@ import com.api.conectaComunidade.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class CommunityServiceService {
@@ -17,13 +21,16 @@ public class CommunityServiceService {
 
     private final CommunityServiceRepository communityServiceRepository;
     private final UserRepository userRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
     public CommunityServiceService(
             CommunityServiceRepository communityServiceRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            EnrollmentRepository enrollmentRepository
     ) {
         this.communityServiceRepository = communityServiceRepository;
         this.userRepository = userRepository;
+        this.enrollmentRepository = enrollmentRepository;
     }
 
     public CommunityServiceResponseDTO create(
@@ -51,6 +58,14 @@ public class CommunityServiceService {
         return toResponseDTO(savedService);
     }
 
+    public List<CommunityServiceResponseDTO> findAll() {
+        return communityServiceRepository
+                .findAll()
+                .stream()
+                .map(this::toResponseDTO)
+                .toList();
+    }
+
     private CommunityServiceResponseDTO toResponseDTO(
             CommunityService communityService
     ) {
@@ -58,6 +73,9 @@ public class CommunityServiceService {
                 communityService.getHorarioInicio(),
                 communityService.getVagas()
         );
+
+        List<LocalTime> horariosDisponiveis =
+                calculateAvailableTimes(communityService);
 
         return new CommunityServiceResponseDTO(
                 communityService.getId(),
@@ -68,10 +86,37 @@ public class CommunityServiceService {
                 horarioFim,
                 communityService.getLocal(),
                 communityService.getVagas(),
+                horariosDisponiveis,
                 communityService.getDescription(),
                 communityService.getContributor().getId(),
                 communityService.getContributor().getName()
         );
+    }
+
+    private List<LocalTime> calculateAvailableTimes(
+            CommunityService communityService
+    ) {
+        List<LocalTime> horariosDisponiveis = new ArrayList<>();
+
+        LocalTime horarioAtual = communityService.getHorarioInicio();
+
+        for (int i = 0; i < communityService.getVagas(); i++) {
+
+            boolean horarioOcupado =
+                    enrollmentRepository.existsByServiceIdAndHorarioAndStatus(
+                            communityService.getId(),
+                            horarioAtual,
+                            EnrollmentStatus.ACTIVE
+                    );
+
+            if (!horarioOcupado) {
+                horariosDisponiveis.add(horarioAtual);
+            }
+
+            horarioAtual = horarioAtual.plusMinutes(DURACAO_VAGA_MINUTOS);
+        }
+
+        return horariosDisponiveis;
     }
 
     private LocalTime calculateEndTime(

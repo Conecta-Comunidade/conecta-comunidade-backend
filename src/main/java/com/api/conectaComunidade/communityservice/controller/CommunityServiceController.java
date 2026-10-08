@@ -11,6 +11,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/community-services")
 public class CommunityServiceController {
@@ -37,6 +39,16 @@ public class CommunityServiceController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CommunityServiceResponseDTO>> findAll() {
+        List<CommunityServiceResponseDTO> response =
+                communityServiceService.findAll();
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
                 .body(response);
     }
 }

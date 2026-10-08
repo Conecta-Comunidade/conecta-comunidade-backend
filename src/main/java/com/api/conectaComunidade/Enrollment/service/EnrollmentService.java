@@ -1,5 +1,6 @@
 package com.api.conectaComunidade.Enrollment.service;
 
+import com.api.conectaComunidade.Enrollment.dto.EnrollmentCancelResponseDTO;
 import com.api.conectaComunidade.Enrollment.dto.EnrollmentRequestDTO;
 import com.api.conectaComunidade.Enrollment.dto.EnrollmentResponseDTO;
 import com.api.conectaComunidade.Enrollment.entity.Enrollment;
@@ -13,6 +14,7 @@ import com.api.conectaComunidade.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Service
 public class EnrollmentService {
@@ -43,7 +45,7 @@ public class EnrollmentService {
 
         CommunityService service = communityServiceRepository
                 .findById(request.serviceId())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+                .orElseThrow(() -> new RuntimeException("Serviço não encontrado."));
 
         if (beneficiary.getRole() != Role.BENEFICIARY) {
             throw new IllegalArgumentException(
@@ -77,6 +79,57 @@ public class EnrollmentService {
                 enrollmentRepository.save(enrollment);
 
         return toResponseDTO(savedEnrollment);
+    }
+
+    public EnrollmentCancelResponseDTO cancel(
+            Long enrollmentId,
+            String email
+    ) {
+        User beneficiary = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Usuário não encontrado.")
+                );
+
+        Enrollment enrollment = enrollmentRepository
+                .findById(enrollmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Inscrição não encontrada.")
+                );
+
+        if (!enrollment.getBeneficiary().getId().equals(beneficiary.getId())) {
+            throw new IllegalArgumentException(
+                    "Você não pode cancelar esta inscrição."
+            );
+        }
+
+        if (enrollment.getStatus() != EnrollmentStatus.ACTIVE) {
+            throw new IllegalArgumentException(
+                    "A inscrição não está ativa."
+            );
+        }
+
+        enrollment.setStatus(EnrollmentStatus.CANCELLED);
+
+        enrollmentRepository.save(enrollment);
+
+        return new EnrollmentCancelResponseDTO(
+                "Inscrição cancelada com sucesso."
+        );
+    }
+
+    public List<EnrollmentResponseDTO> findMyEnrollments(String email) {
+        User beneficiary = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Usuário não encontrado.")
+                );
+
+        return enrollmentRepository
+                .findByBeneficiaryId(beneficiary.getId())
+                .stream()
+                .map(this::toResponseDTO)
+                .toList();
     }
 
     private void validateHorario(

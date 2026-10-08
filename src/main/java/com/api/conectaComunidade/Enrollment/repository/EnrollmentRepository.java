@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment,Long> {
@@ -15,4 +16,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment,Long> {
             LocalTime horario,
             EnrollmentStatus status
     );
+
+    List<Enrollment> findByBeneficiaryId(Long beneficiaryId);
 }
