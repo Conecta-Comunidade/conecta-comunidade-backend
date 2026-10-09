@@ -6,6 +6,7 @@ import com.api.conectaComunidade.communityservice.dto.CommunityServiceRequestDTO
 import com.api.conectaComunidade.communityservice.dto.CommunityServiceResponseDTO;
 import com.api.conectaComunidade.communityservice.entity.CommunityService;
 import com.api.conectaComunidade.communityservice.repository.CommunityServiceRepository;
+import com.api.conectaComunidade.exception.ResourceNotFoundException;
 import com.api.conectaComunidade.user.entity.User;
 import com.api.conectaComunidade.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,11 @@ public class CommunityServiceService {
     ) {
         User contributor = userRepository
                 .findByEmail(email)
-                .orElseThrow();
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuário não encontrado."
+                        )
+                );
 
         CommunityService communityService = new CommunityService();
 
@@ -113,7 +118,9 @@ public class CommunityServiceService {
                 horariosDisponiveis.add(horarioAtual);
             }
 
-            horarioAtual = horarioAtual.plusMinutes(DURACAO_VAGA_MINUTOS);
+            horarioAtual = horarioAtual.plusMinutes(
+                    DURACAO_VAGA_MINUTOS
+            );
         }
 
         return horariosDisponiveis;

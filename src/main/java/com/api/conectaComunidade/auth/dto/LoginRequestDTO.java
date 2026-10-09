@@ -9,7 +9,8 @@ public record LoginRequestDTO(
         @Email
         String email,
 
-        @Size(min = 3 , max = 8, message = "Senha deve ter entre 3 e 8 carateris")
+        @NotBlank(message = "Senha é obrigatória.")
+        @Size(min = 3, max = 8, message = "Senha deve ter entre 3 e 8 caracteres.")
         String password
 ) {
 }

@@ -1,6 +1,6 @@
 package com.api.conectaComunidade.user.service;
 
-
+import com.api.conectaComunidade.exception.ResourceNotFoundException;
 import com.api.conectaComunidade.user.dto.UserResponseDTO;
 import com.api.conectaComunidade.user.entity.User;
 import com.api.conectaComunidade.user.repository.UserRepository;
@@ -16,10 +16,13 @@ public class UserService {
     }
 
     public UserResponseDTO findById(Long id) {
-
         User user = userRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuário não encontrado."
+                        )
+                );
 
         return new UserResponseDTO(
                 user.getId(),
@@ -32,11 +35,17 @@ public class UserService {
     public UserResponseDTO findByEmail(String email) {
         User user = userRepository
                 .findByEmail(email)
-                .orElseThrow( ()-> new RuntimeException("Email não encontrado"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "E-mail não encontrado."
+                        )
+                );
+
         return new UserResponseDTO(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
-                user.getRole());
-    };
+                user.getRole()
+        );
+    }
 }

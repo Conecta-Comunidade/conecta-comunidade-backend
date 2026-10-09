@@ -9,6 +9,8 @@ import com.api.conectaComunidade.Enrollment.entity.EnrollmentStatus;
 import com.api.conectaComunidade.Enrollment.repository.EnrollmentRepository;
 import com.api.conectaComunidade.communityservice.entity.CommunityService;
 import com.api.conectaComunidade.communityservice.repository.CommunityServiceRepository;
+import com.api.conectaComunidade.exception.BusinessException;
+import com.api.conectaComunidade.exception.ResourceNotFoundException;
 import com.api.conectaComunidade.user.entity.Role;
 import com.api.conectaComunidade.user.entity.User;
 import com.api.conectaComunidade.user.repository.UserRepository;
@@ -43,14 +45,22 @@ public class EnrollmentService {
     ) {
         User beneficiary = userRepository
                 .findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuário não encontrado."
+                        )
+                );
 
         CommunityService service = communityServiceRepository
                 .findById(request.serviceId())
-                .orElseThrow(() -> new RuntimeException("Serviço não encontrado."));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Serviço não encontrado."
+                        )
+                );
 
         if (beneficiary.getRole() != Role.BENEFICIARY) {
-            throw new IllegalArgumentException(
+            throw new BusinessException(
                     "Apenas beneficiários podem se inscrever em serviços."
             );
         }
@@ -67,7 +77,7 @@ public class EnrollmentService {
                 );
 
         if (horarioOcupado) {
-            throw new IllegalArgumentException(
+            throw new BusinessException(
                     "O horário selecionado já está ocupado."
             );
         }
@@ -92,23 +102,28 @@ public class EnrollmentService {
         User beneficiary = userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("Usuário não encontrado.")
+                        new ResourceNotFoundException(
+                                "Usuário não encontrado."
+                        )
                 );
 
         Enrollment enrollment = enrollmentRepository
                 .findById(enrollmentId)
                 .orElseThrow(() ->
-                        new RuntimeException("Inscrição não encontrada.")
+                        new ResourceNotFoundException(
+                                "Inscrição não encontrada."
+                        )
                 );
 
-        if (!enrollment.getBeneficiary().getId().equals(beneficiary.getId())) {
-            throw new IllegalArgumentException(
+        if (!enrollment.getBeneficiary().getId()
+                .equals(beneficiary.getId())) {
+            throw new BusinessException(
                     "Você não pode cancelar esta inscrição."
             );
         }
 
         if (enrollment.getStatus() != EnrollmentStatus.ACTIVE) {
-            throw new IllegalArgumentException(
+            throw new BusinessException(
                     "A inscrição não está ativa."
             );
         }
@@ -122,11 +137,15 @@ public class EnrollmentService {
         );
     }
 
-    public List<EnrollmentResponseDTO> findMyEnrollments(String email) {
+    public List<EnrollmentResponseDTO> findMyEnrollments(
+            String email
+    ) {
         User beneficiary = userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("Usuário não encontrado.")
+                        new ResourceNotFoundException(
+                                "Usuário não encontrado."
+                        )
                 );
 
         return enrollmentRepository
@@ -143,17 +162,22 @@ public class EnrollmentService {
         User contributor = userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("Usuário não encontrado.")
+                        new ResourceNotFoundException(
+                                "Usuário não encontrado."
+                        )
                 );
 
         CommunityService service = communityServiceRepository
                 .findById(serviceId)
                 .orElseThrow(() ->
-                        new RuntimeException("Serviço não encontrado.")
+                        new ResourceNotFoundException(
+                                "Serviço não encontrado."
+                        )
                 );
 
-        if (!service.getContributor().getId().equals(contributor.getId())) {
-            throw new IllegalArgumentException(
+        if (!service.getContributor().getId()
+                .equals(contributor.getId())) {
+            throw new BusinessException(
                     "Você não pode consultar as inscrições deste serviço."
             );
         }
@@ -172,25 +196,28 @@ public class EnrollmentService {
         User contributor = userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("Usuário não encontrado.")
+                        new ResourceNotFoundException(
+                                "Usuário não encontrado."
+                        )
                 );
 
         Enrollment enrollment = enrollmentRepository
                 .findById(enrollmentId)
                 .orElseThrow(() ->
-                        new RuntimeException("Inscrição não encontrada.")
+                        new ResourceNotFoundException(
+                                "Inscrição não encontrada."
+                        )
                 );
 
         if (!enrollment.getService().getContributor().getId()
                 .equals(contributor.getId())) {
-
-            throw new IllegalArgumentException(
+            throw new BusinessException(
                     "Você não pode concluir esta inscrição."
             );
         }
 
         if (enrollment.getStatus() != EnrollmentStatus.ACTIVE) {
-            throw new IllegalArgumentException(
+            throw new BusinessException(
                     "A inscrição não está ativa."
             );
         }
@@ -212,13 +239,14 @@ public class EnrollmentService {
         LocalTime now = LocalTime.now();
 
         if (service.getDate().isBefore(today)) {
-            throw new IllegalArgumentException(
+            throw new BusinessException(
                     "Não é possível se inscrever em um serviço que já aconteceu."
             );
         }
 
-        if (service.getDate().isEqual(today) && !horario.isAfter(now)) {
-            throw new IllegalArgumentException(
+        if (service.getDate().isEqual(today)
+                && !horario.isAfter(now)) {
+            throw new BusinessException(
                     "Não é possível se inscrever em um horário que já passou."
             );
         }
@@ -241,7 +269,7 @@ public class EnrollmentService {
             );
         }
 
-        throw new IllegalArgumentException(
+        throw new BusinessException(
                 "O horário selecionado não corresponde a uma vaga disponível."
         );
     }
